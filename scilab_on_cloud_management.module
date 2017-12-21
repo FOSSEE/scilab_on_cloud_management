@@ -149,12 +149,12 @@ Dear !user_name,
 
 You have updated the scilab on cloud error status for following book :
 
-Title of the book : ' . $preference_data->book . '
-Author : ' . $preference_data->author. '
-Publisher : '. $preference_data->publisher .'
-Edition : '. $preference_data->edition .'
+Title of the book: ' . $preference_data->book . '
+Author: ' . $preference_data->author. '
+Publisher: '. $preference_data->publisher .'
+Edition: '. $preference_data->edition .'
 
-Display TBC on scilab on cloud : '. $display_book_on_scilab_cloud .' 
+Display TBC on scilab on cloud: '. $display_book_on_scilab_cloud .' 
 Best Wishes,
 
 Scilab TBC Team,
