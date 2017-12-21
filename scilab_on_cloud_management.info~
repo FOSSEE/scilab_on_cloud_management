@@ -1,5 +1,0 @@
-name = Scilab on Cloud management
-description = Module to control display Scilab TBC on scilab on cloud
-version = 7.1
-core = 7.x
-package = IITB
