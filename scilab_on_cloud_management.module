@@ -33,7 +33,7 @@ function scilab_on_cloud_management_permission()
 
 function display_books_edit_all(){
     $page_content = "";
-    $page_content .= "Note: If the book is checked it will not display on scilab on cloud books list";
+    $page_content .= "Note: If the book is checked it will not be display on scilab on cloud books list";
         $query = "SELECT pe.id, pe.book as book, pe.author as author,
                             pe.edition, pe.publisher as publisher,
                             pe.year as year, pe.cloud_pref_err_status,
@@ -138,7 +138,7 @@ function scilab_on_cloud_management_mail($key, &$message, $params)
             }
             $user_data = user_load($params['cloud_error_status_updated']['user_id']);
             $message['headers'] = $params['cloud_error_status_updated']['headers'];
-            $message['subject'] = t('[!site_name][Textbook companion][Scilab On Cloud] TBC book scilab on cloud error status updated ' . $preference_data->book, array(
+            $message['subject'] = t('[!site_name][Scilab On Cloud] Cloud error status display TBC in list of scilab on cloud has been updated ' . $preference_data->book, array(
                 '!site_name' => variable_get('site_name', '')
             ), array(
                 'language' => $language->language
@@ -147,7 +147,7 @@ function scilab_on_cloud_management_mail($key, &$message, $params)
                 'body' => t('
 Dear !user_name,
 
-You have updated the scilab on cloud error status for following book :
+You have updated the cloud error status for the following book:
 
 Title of the book: ' . $preference_data->book . '
 Author: ' . $preference_data->author. '
@@ -155,8 +155,8 @@ Publisher: '. $preference_data->publisher .'
 Edition: '. $preference_data->edition .'
 
 Display TBC on scilab on cloud: '. $display_book_on_scilab_cloud .' 
-Best Wishes,
 
+Best Wishes,
 Scilab TBC Team,
 FOSSEE, IIT Bombay.', array(
                     '!site_name' => variable_get('site_name', ''),
