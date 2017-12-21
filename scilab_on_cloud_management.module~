@@ -1,0 +1,175 @@
+<?php
+function scilab_on_cloud_management_menu()
+{
+    $items = array();
+    $items["scilab-on-cloud-management/display-books"] = array(
+        "title" => "Display TBC on scilab on cloud",
+        "page callback" => "display_books_edit_all",
+        "access arguments" => array(
+            "enable edit scilab on cloud management"
+        ),
+        "type" => MENU_NORMAL_ITEM
+    );
+    $items["scilab-on-cloud-management/display-books/ajax"] = array(
+        "page callback" => "scilab_on_cloud_management_ajax",
+        "access callback" => TRUE,
+        "access arguments" => array(
+            "enable edit scilab on cloud management"
+        ),
+        "type" => MENU_CALLBACK
+    );
+        return $items;
+    }
+
+function scilab_on_cloud_management_permission()
+{
+    return array(
+        "enable edit scilab on cloud management" => array(
+            "title" => t("Enable edit for scilab_on_cloud_management"),
+            'restrict access' => TRUE
+        )
+    );
+}
+
+function display_books_edit_all(){
+    $page_content = "";
+    $page_content .= "Note: If the book is checked it will not display on scilab on cloud books list";
+        $query = "SELECT pe.id, pe.book as book, pe.author as author,
+                            pe.edition, pe.publisher as publisher,
+                            pe.year as year, pe.cloud_pref_err_status,
+                            pe.id as pe_id, po.approval_date as approval_date
+                            FROM textbook_companion_preference pe
+                            LEFT JOIN textbook_companion_proposal po ON
+                            pe.proposal_id = po.id WHERE po.proposal_status = 3
+                            AND pe.approval_status = 1
+                            ORDER BY pe.book ASC ";
+        $result = db_query($query);
+        $headers = array(
+            "Sr. No.",
+            "Book",
+            "Author",
+            "Publisher",
+            "Edition",
+            "Action"
+        );
+        $rows = array();
+        $i = 1;
+        while ($row = $result->fetchObject()) {
+            $item = array(
+                "$i",
+                "{$row->book}",
+                "{$row->author}",
+                "{$row->publisher}",
+                "{$row->edition}",
+            );
+            $i++;
+            if ($row->cloud_pref_err_status) {
+                $check = "<input class='selected' type='checkbox' data-bid='{$row->id}' checked>";
+            } //$row->selected
+            else {
+                $check = "<input class='selected' type='checkbox' data-bid='{$row->id}'>";
+            }
+            array_push($item, $check);
+            array_push($rows, $item);
+        } //$row = $result->fetchObject()
+        //$page_content .= theme("table", $headers, $rows);
+        $page_content .= theme("table", array(
+            'header' => $headers,
+            'rows' => $rows
+        ));
+    
+    return $page_content;
+}
+
+function scilab_on_cloud_management_ajax($item = "", $key = "")
+{
+    $data = "";
+    global $user;
+    if ($item == "selected") {
+        $query = "
+                UPDATE textbook_companion_preference
+                SET cloud_pref_err_status = !cloud_pref_err_status
+                WHERE id = :id
+            ";
+        $args = array(
+            ":id" => $key
+        );
+        db_query($query, $args);
+        $data = "updated";
+        /* sending email */
+        $email_to = $user->mail;
+        $from = variable_get('textbook_companion_from_email', '');
+        $bcc = variable_get('textbook_companion_fixer_bcc_emails', '');
+        $cc = variable_get('textbook_companion_fixer_cc_emails', '');
+        $params['cloud_error_status_updated']['pref_id'] = $key;
+        $params['cloud_error_status_updated']['user_id'] = $user->uid;
+        $params['cloud_error_status_updated']['headers'] = array(
+            'From' => $from,
+            'MIME-Version' => '1.0',
+            'Content-Type' => 'text/plain; charset=UTF-8; format=flowed; delsp=yes',
+            'Content-Transfer-Encoding' => '8Bit',
+            'X-Mailer' => 'Drupal',
+            'Cc' => $cc,
+            'Bcc' => $bcc
+        );
+        if (!drupal_mail('scilab_on_cloud_management', 'cloud_error_status_updated', $email_to, language_default(), $params, $from, TRUE)) {
+            $data .= 'Error sending email message.';
+        }
+    } //$item == "selected"
+    echo $data;
+    exit();
+}
+function scilab_on_cloud_management_mail($key, &$message, $params)
+{
+    global $user;
+    $language = $message['language'];
+    switch ($key) {
+            case 'cloud_error_status_updated':
+            $query = db_select('textbook_companion_preference');
+            $query->fields('textbook_companion_preference');
+            $query->condition('id', $params['cloud_error_status_updated']['pref_id']);
+            $query->range(0, 1);
+            $result = $query->execute();
+            $preference_data = $result->fetchObject();
+            if ($preference_data->cloud_pref_err_status == 0){
+                $display_book_on_scilab_cloud = "Yes";
+            }else{
+            $display_book_on_scilab_cloud = "No";
+            }
+            $user_data = user_load($params['cloud_error_status_updated']['user_id']);
+            $message['headers'] = $params['cloud_error_status_updated']['headers'];
+            $message['subject'] = t('[!site_name][Textbook companion][Scilab On Cloud] TBC book scilab on cloud error status updated ' . $preference_data->book, array(
+                '!site_name' => variable_get('site_name', '')
+            ), array(
+                'language' => $language->language
+            ));
+            $message['body'] = array(
+                'body' => t('
+Dear !user_name,
+
+You have updated the scilab on cloud error status for following book :
+
+Title of the book : ' . $preference_data->book . '
+Author : ' . $preference_data->author. '
+Publisher : '. $preference_data->publisher .'
+Edition : '. $preference_data->edition .'
+
+Display TBC on scilab on cloud : '. $display_book_on_scilab_cloud .' 
+Best Wishes,
+
+Scilab TBC Team,
+FOSSEE, IIT Bombay', array(
+                    '!site_name' => variable_get('site_name', ''),
+                    '!user_name' => $user_data->name
+                ), array(
+                    'language' => $language->language
+                ))
+            );
+            break;
+    } //$key
+}
+
+function scilab_on_cloud_management_init()
+{
+    drupal_add_js(drupal_get_path("module", "scilab_on_cloud_management") . "/js/socm.js");
+}
