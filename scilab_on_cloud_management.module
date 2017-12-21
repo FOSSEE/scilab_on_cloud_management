@@ -158,7 +158,7 @@ Display TBC on scilab on cloud: '. $display_book_on_scilab_cloud .'
 Best Wishes,
 
 Scilab TBC Team,
-FOSSEE, IIT Bombay', array(
+FOSSEE, IIT Bombay.', array(
                     '!site_name' => variable_get('site_name', ''),
                     '!user_name' => $user_data->name
                 ), array(
